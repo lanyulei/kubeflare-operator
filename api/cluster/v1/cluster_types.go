@@ -89,29 +89,23 @@ type ClusterConnection struct {
 	Token string `json:"token,omitempty"`
 }
 
-// ClusterStatus defines the observed state of Cluster.
+const (
+	// ClusterConditionReady 表示目标集群基础状态是否可用。
+	ClusterConditionReady = "Ready"
+
+	// ConditionTrue 表示条件成立。
+	ConditionTrue = "True"
+	// ConditionFalse 表示条件不成立。
+	ConditionFalse = "False"
+	// ConditionUnknown 表示条件状态暂时未知。
+	ConditionUnknown = "Unknown"
+)
+
+// ClusterStatus 定义 Cluster 的观测状态。
 type ClusterStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
-	// For Kubernetes API conventions, see:
-	// https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#typical-status-properties
-
-	// conditions represent the current state of the Cluster resource.
-	// Each condition has a unique type and reflects the status of a specific aspect of the resource.
-	//
-	// Standard condition types include:
-	// - "Available": the resource is fully functional
-	// - "Progressing": the resource is being created or updated
-	// - "Degraded": the resource failed to reach or maintain its desired state
-	//
-	// The status of each condition is one of True, False, or Unknown.
+	// Conditions 表示集群当前状态的最新观测结果。
 	// +listType=map
 	// +listMapKey=type
-	// +optional
-	// Conditions []metav1.Condition `json:"conditions,omitempty"`
-
-	// Conditions 表示集群当前状态的最新观测结果。
 	// +optional
 	Conditions []ClusterCondition `json:"conditions,omitempty"`
 
@@ -151,6 +145,7 @@ type ClusterCondition struct {
 
 	// Status 表示条件状态。
 	// 可选值通常为 True、False、Unknown。
+	// +kubebuilder:validation:Enum=True;False;Unknown
 	Status string `json:"status"`
 
 	// Reason 表示状态变化的原因。

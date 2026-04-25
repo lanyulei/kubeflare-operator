@@ -37,8 +37,7 @@ var _ = Describe("Cluster Controller", func() {
 		ctx := context.Background()
 
 		typeNamespacedName := types.NamespacedName{
-			Name:      resourceName,
-			Namespace: "default", // TODO(user):Modify as needed
+			Name: resourceName,
 		}
 		cluster := &clusterv1.Cluster{}
 
@@ -48,17 +47,19 @@ var _ = Describe("Cluster Controller", func() {
 			if err != nil && errors.IsNotFound(err) {
 				resource := &clusterv1.Cluster{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      resourceName,
-						Namespace: "default",
+						Name: resourceName,
 					},
-					// TODO(user): Specify other spec details if needed.
+					Spec: clusterv1.ClusterSpec{
+						Connection: clusterv1.ClusterConnection{
+							Kubeconfig: []byte("fake-kubeconfig"),
+						},
+					},
 				}
 				Expect(k8sClient.Create(ctx, resource)).To(Succeed())
 			}
 		})
 
 		AfterEach(func() {
-			// TODO(user): Cleanup logic after each test, like removing the resource instance.
 			resource := &clusterv1.Cluster{}
 			err := k8sClient.Get(ctx, typeNamespacedName, resource)
 			Expect(err).NotTo(HaveOccurred())
@@ -71,14 +72,35 @@ var _ = Describe("Cluster Controller", func() {
 			controllerReconciler := &ClusterReconciler{
 				Client: k8sClient,
 				Scheme: k8sClient.Scheme(),
+				StatusReader: fakeClusterStatusReader{
+					kubernetesVersion: "v1.30.0",
+					nodeCount:         3,
+				},
 			}
 
 			_, err := controllerReconciler.Reconcile(ctx, reconcile.Request{
 				NamespacedName: typeNamespacedName,
 			})
 			Expect(err).NotTo(HaveOccurred())
-			// TODO(user): Add more specific assertions depending on your controller's reconciliation logic.
-			// Example: If you expect a certain status condition after reconciliation, verify it here.
+
+			By("checking the synchronized cluster status")
+			updated := &clusterv1.Cluster{}
+			Expect(k8sClient.Get(ctx, typeNamespacedName, updated)).To(Succeed())
+			Expect(updated.Status.KubernetesVersion).To(Equal("v1.30.0"))
+			Expect(updated.Status.NodeCount).To(Equal(int32(3)))
 		})
 	})
 })
+
+type fakeClusterStatusReader struct {
+	kubernetesVersion string
+	nodeCount         int32
+}
+
+// fakeClusterStatusReader 避免测试依赖真实的远端 Kubernetes 集群。
+func (f fakeClusterStatusReader) ReadClusterStatus(context.Context, []byte) (observedClusterStatus, error) {
+	return observedClusterStatus{
+		KubernetesVersion: f.kubernetesVersion,
+		NodeCount:         f.nodeCount,
+	}, nil
+}

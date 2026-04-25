@@ -1,0 +1,185 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.20.1
+  name: clusters.cluster.kubeflare.com
+spec:
+  group: cluster.kubeflare.com
+  names:
+    kind: Cluster
+    listKind: ClusterList
+    plural: clusters
+    singular: cluster
+  scope: Cluster
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.provider
+      name: Provider
+      type: string
+    - jsonPath: .status.kubernetesVersion
+      name: Version
+      type: string
+    name: v1
+    schema:
+      openAPIV3Schema:
+        description: Cluster is the Schema for the clusters API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: spec defines the desired state of Cluster
+            properties:
+              config:
+                description: |-
+                  Config 表示集群的自定义配置内容。
+                  该字段会在 CRD 中生成为 type: string, format: byte。
+                format: byte
+                type: string
+              connection:
+                description: Connection 表示连接目标集群所需的信息。
+                properties:
+                  externalKubernetesAPIEndpoint:
+                    description: ExternalKubernetesAPIEndpoint 表示对外暴露的 Kubernetes
+                      API Server 地址。
+                    type: string
+                  kubeconfig:
+                    description: |-
+                      Kubeconfig 表示连接目标集群 API Server 的 kubeconfig 内容。
+                      该字段会在 CRD 中生成为 type: string, format: byte。
+                    format: byte
+                    type: string
+                  kubernetesAPIEndpoint:
+                    description: |-
+                      KubernetesAPIEndpoint 表示目标集群 Kubernetes API Server 地址。
+                      例如：https://10.10.0.1:6443。
+                    type: string
+                  kubernetesAPIServerPort:
+                    description: |-
+                      KubernetesAPIServerPort 表示 Kubernetes API Server 代理转发端口。
+                      通常仅在代理连接模式下使用。
+                    format: int32
+                    type: integer
+                  token:
+                    description: Token 表示集群代理或组件连接控制面时使用的令牌。
+                    type: string
+                  type:
+                    description: |-
+                      Type 表示连接方式。
+                      例如：direct 表示直接连接，proxy 表示代理连接。
+                    type: string
+                type: object
+              enable:
+                description: |-
+                  Enable 表示是否启用该集群。
+                  使用指针是为了区分未设置和显式设置为 false。
+                type: boolean
+              externalKubeAPIEnabled:
+                description: ExternalKubeAPIEnabled 表示是否对外暴露 Kubernetes API。
+                type: boolean
+              joinFederation:
+                description: JoinFederation 表示该集群是否加入联邦管理。
+                type: boolean
+              provider:
+                description: |-
+                  Provider 表示集群提供方，仅用于描述集群来源或类型。
+                  例如：local、kind、eks、ack、tke、自建集群等。
+                type: string
+            type: object
+          status:
+            description: status defines the observed state of Cluster
+            properties:
+              conditions:
+                description: Conditions 表示集群当前状态的最新观测结果。
+                items:
+                  description: ClusterCondition 表示 Cluster 的一个状态条件。
+                  properties:
+                    lastTransitionTime:
+                      description: LastTransitionTime 表示该条件状态最后一次发生变化的时间。
+                      format: date-time
+                      type: string
+                    lastUpdateTime:
+                      description: LastUpdateTime 表示该条件最后一次更新的时间。
+                      format: date-time
+                      type: string
+                    message:
+                      description: Message 表示状态变化的详细说明。
+                      type: string
+                    reason:
+                      description: Reason 表示状态变化的原因。
+                      type: string
+                    status:
+                      description: |-
+                        Status 表示条件状态。
+                        可选值通常为 True、False、Unknown。
+                      enum:
+                      - "True"
+                      - "False"
+                      - Unknown
+                      type: string
+                    type:
+                      description: |-
+                        Type 表示条件类型。
+                        例如：Ready、Connected、Healthy。
+                      type: string
+                  required:
+                  - status
+                  - type
+                  type: object
+                type: array
+                x-kubernetes-list-map-keys:
+                - type
+                x-kubernetes-list-type: map
+              configz:
+                additionalProperties:
+                  type: boolean
+                description: |-
+                  Configz 表示集群内各组件是否启用。
+                  key 为组件名称，value 表示是否启用。
+                type: object
+              kubernetesVersion:
+                description: KubernetesVersion 表示目标集群的 Kubernetes 版本。
+                type: string
+              nodeCount:
+                description: NodeCount 表示目标集群节点数量。
+                format: int32
+                type: integer
+              region:
+                description: |-
+                  Region 表示集群所在区域。
+                  例如：cn-hangzhou、us-east1。
+                type: string
+              uid:
+                description: |-
+                  UID 表示集群唯一标识。
+                  可以使用 kube-system namespace UID 或其他稳定 ID。
+                type: string
+              zones:
+                description: Zones 表示集群节点所在的可用区列表。
+                items:
+                  type: string
+                type: array
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
